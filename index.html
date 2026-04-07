@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jelajah Madura - Peta Soal Dinamis</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- FontAwesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+        
+        body { font-family: 'Nunito', sans-serif; background-color: #f8fafc; margin: 0; overflow: hidden; }
+        #map { z-index: 1; }
+        
+        .modal-enter { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        
+        /* Pin Aktif (Merah) */
+        .custom-marker { 
+            background-color: #ef4444; 
+            border-radius: 50% 50% 50% 0; 
+            border: 3px solid white; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3); 
+            text-align: center; 
+            display: flex; align-items: center; justify-content: center;
+            color: white; transform: rotate(-45deg); transition: all 0.2s; 
+        }
+        .custom-marker i { transform: rotate(45deg); }
+        .custom-marker:hover { transform: scale(1.2) rotate(-45deg); cursor: pointer; background-color: #f59e0b;}
+        
+        /* Pin Nonaktif / Sudah Dijawab (Abu-abu) */
+        .marker-disabled {
+            background-color: #9ca3af !important;
+            border-color: #e5e7eb !important;
+            color: #f3f4f6 !important;
+            box-shadow: none;
+            opacity: 0.8;
+        }
+        .marker-disabled:hover { transform: rotate(-45deg); cursor: not-allowed; }
+
+        .custom-scroll::-webkit-scrollbar { width: 8px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="flex flex-col h-screen">
+
+    <!-- Header -->
+    <header class="bg-red-700 text-white p-3 shadow-md z-10 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <i class="fas fa-map-marked-alt text-3xl"></i>
+            <div>
+                <h1 class="text-xl md:text-2xl font-bold tracking-wider">Jelajah Madura</h1>
+                <p class="text-xs text-red-200">Setiap soal hanya bisa dijawab satu kali!</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <!-- Tombol Reset Cepat (Baru) -->
+            <button onclick="resetAllQuestions()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-bold shadow transition flex items-center gap-2">
+                <i class="fas fa-sync-alt"></i> <span class="hidden md:inline">Reset Peta</span>
+            </button>
+            <!-- Tombol Pengaturan Guru -->
+            <button onclick="openSettings()" class="bg-white hover:bg-gray-100 text-red-800 px-3 py-2 rounded-lg text-sm font-bold shadow transition flex items-center gap-2">
+                <i class="fas fa-cog"></i> <span class="hidden md:inline">Pengaturan Guru</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="flex flex-col flex-grow relative">
+        <div class="w-full h-full relative">
+            <div id="map" class="w-full h-full"></div>
+            
+            <div class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white/90 px-6 py-2 rounded-full shadow-lg z-[400] text-sm md:text-base font-bold text-red-800 text-center border-2 border-red-200 pointer-events-none flex items-center gap-2">
+                Sisa Soal: <span id="soal-sisa-badge" class="bg-red-600 text-white px-2 py-0.5 rounded text-sm">14</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Tampilan Soal -->
+    <div id="question-modal" class="hidden absolute inset-0 bg-gray-900/70 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden modal-enter relative border-t-8 border-red-600">
+            <div class="p-6 relative">
+                <button onclick="closeModal('question-modal')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-800 text-3xl leading-none">&times;</button>
+                
+                <div class="flex items-center gap-3 mb-6 border-b-2 border-gray-100 pb-4">
+                    <div class="bg-red-100 p-3 rounded-full text-red-600 text-2xl">
+                        <i class="fas fa-question-circle"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800" id="modal-location">Nama Lokasi</h2>
+                        <p class="text-gray-500 text-sm">Pertanyaan Diskusi</p>
+                    </div>
+                </div>
+
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg mb-6 shadow-inner">
+                    <p class="text-gray-800 text-lg leading-relaxed font-medium" id="modal-question-text">
+                        Soal akan muncul di sini?
+                    </p>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    <button id="btn-tandai-selesai" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition shadow-md">
+                        <i class="fas fa-check-circle mr-2"></i> Tandai Sudah Dijawab
+                    </button>
+                    <button onclick="closeModal('question-modal')" class="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition">
+                        Batal / Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Pengaturan Guru -->
+    <div id="settings-modal" class="hidden absolute inset-0 bg-gray-900/80 z-[10000] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden modal-enter">
+            <div class="bg-red-700 p-4 text-white flex justify-between items-center shrink-0">
+                <h2 class="text-xl font-bold"><i class="fas fa-cogs mr-2"></i> Pengaturan Guru</h2>
+                <button onclick="closeModal('settings-modal')" class="text-white hover:text-red-200 text-2xl leading-none">&times;</button>
+            </div>
+            
+            <div class="p-4 bg-red-50 text-red-800 text-sm border-b border-red-200 shrink-0 flex justify-between items-center">
+                <span>Ubah teks soal di bawah. Soal otomatis disesuaikan dengan daerah di Madura.</span>
+                <button onclick="resetAllQuestions()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded shadow text-xs font-bold transition">
+                    <i class="fas fa-sync-alt mr-1"></i> Buka Semua Soal (Reset Kelas)
+                </button>
+            </div>
+
+            <!-- Form Container -->
+            <div class="p-4 overflow-y-auto custom-scroll flex-grow bg-gray-50" id="settings-form-container">
+                <!-- Form akan di-generate via JavaScript -->
+            </div>
+
+            <div class="p-4 bg-white border-t flex justify-end shrink-0 gap-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                <button onclick="closeModal('settings-modal')" class="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-lg font-bold transition">Batal</button>
+                <button onclick="saveSettings()" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold shadow transition"><i class="fas fa-save mr-2"></i> Simpan Pertanyaan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Penutup (Semua Terjawab) -->
+    <div id="completion-modal" class="hidden absolute inset-0 bg-gray-900/80 z-[10000] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center modal-enter">
+            <i class="fas fa-flag-checkered text-6xl text-green-500 mb-4"></i>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Penjelajahan Selesai!</h2>
+            <p class="text-gray-600 mb-6">Luar biasa! Semua soal di daerah Madura telah berhasil dijelajahi dan dijawab oleh siswa.</p>
+            <button onclick="resetAllQuestions()" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition shadow-md">
+                <i class="fas fa-sync-alt mr-2"></i> Mainkan Ulang dari Awal
+            </button>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        // --- DATA LOKASI MADURA (14 TITIK) ---
+        let maduraData = [
+            // Bangkalan & Sekitarnya
+            { id: "bangkalan-kota", name: "Bangkalan Kota", lat: -7.0333, lng: 112.7333, isAnswered: false, question: "Bangkalan dikenal religius. Bagaimana peci tinggi melambangkan kedewasaan seseorang dalam mengambil keputusan di masyarakat?" },
+            { id: "kamal", name: "Pelabuhan Kamal", lat: -7.1643, lng: 112.7188, isAnswered: false, question: "Saat menyeberang di pelabuhan dan bertemu dengan orang yang lebih tua, bagaimana cara menyapa yang sesuai dengan norma kesopanan?" },
+            { id: "arosbaya", name: "Arosbaya", lat: -6.9427, lng: 112.8465, isAnswered: false, question: "Di Arosbaya terdapat makam para raja. Adab berpakaian seperti apa (termasuk penggunaan peci) yang harus dijaga saat berziarah?" },
+            { id: "blega", name: "Kecamatan Blega", lat: -7.1352, lng: 113.0645, isAnswered: false, question: "Pasar Blega selalu ramai. Berikan 2 contoh menjaga lisan (perkataan) yang mencerminkan norma kesopanan di tempat umum!" },
+            
+            // Sampang & Sekitarnya
+            { id: "sampang-kota", name: "Sampang Kota", lat: -7.1887, lng: 113.2458, isAnswered: false, question: "Jika kamu menghadiri rapat desa di Sampang, mengapa menggunakan pakaian rapi dan berpeci dianggap menghargai tuan rumah?" },
+            { id: "camplong", name: "Pantai Camplong", lat: -7.2119, lng: 113.3150, isAnswered: false, question: "Saat berwisata ke pantai bersama teman, bagaimana cara menjaga kesopanan agar tidak mengganggu pengunjung lain?" },
+            { id: "ketapang", name: "Ketapang", lat: -6.8996, lng: 113.3278, isAnswered: false, question: "Masyarakat pesisir utara terkenal pekerja keras. Bagaimana cara yang sopan saat seorang anak muda menawarkan bantuan kepada nelayan tua?" },
+            
+            // Pamekasan & Sekitarnya
+            { id: "pamekasan-kota", name: "Pamekasan Kota", lat: -7.1583, lng: 113.4816, isAnswered: false, question: "Pamekasan adalah Kota Gerbang Salam. Jelaskan mengapa norma kesopanan sangat penting bagi identitas seorang pelajar di kota ini!" },
+            { id: "pademawu", name: "Pademawu", lat: -7.2144, lng: 113.5181, isAnswered: false, question: "Saat panen garam di Pademawu, para pekerja sering beristirahat bersama. Nilai kesopanan apa yang bisa diterapkan saat makan bersama orang yang lebih tua?" },
+            { id: "waru", name: "Kecamatan Waru", lat: -6.9388, lng: 113.4357, isAnswered: false, question: "Jika kamu diundang ke acara pernikahan adat, mengapa peci hitam sering dijadikan simbol 'pengontrol' agar pemakainya menjaga sikap?" },
+            
+            // Sumenep & Sekitarnya
+            { id: "sumenep-kota", name: "Sumenep (Keraton)", lat: -7.0097, lng: 113.8617, isAnswered: false, question: "Sumenep kental dengan budaya keraton. Menurutmu, apakah tata krama keraton masa lalu masih relevan diterapkan oleh anak muda masa kini? Jelaskan!" },
+            { id: "kalianget", name: "Kalianget", lat: -7.0461, lng: 113.8967, isAnswered: false, question: "Di daerah pabrik garam tua Kalianget, banyak sejarah peninggalan. Bagaimana adab yang baik saat mengunjungi tempat bersejarah?" },
+            { id: "ambunten", name: "Ambunten", lat: -6.8833, lng: 113.7333, isAnswered: false, question: "Jika kamu menjadi tamu di rumah temanmu di daerah Ambunten, sebutkan 3 hal yang TIDAK BOLEH kamu lakukan agar tetap dianggap sopan!" },
+            { id: "bluto", name: "Bluto", lat: -7.0981, lng: 113.8055, isAnswered: false, question: "Masyarakat agraris di Bluto sangat menghargai guru ngaji. Bagaimana sikap tubuh yang sopan saat mendengarkan nasihat dari seorang guru?" }
+        ];
+
+        // --- INISIALISASI PETA ---
+        const map = L.map('map', { zoomControl: false }).setView([-7.05, 113.35], 10); 
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+        
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap',
+            maxZoom: 15,
+            minZoom: 9
+        }).addTo(map);
+
+        let currentActiveId = null; // Menyimpan ID lokasi yang sedang dibuka
+        const markers = {}; // Menyimpan referensi marker
+
+        // --- FUNGSI RENDER MARKER ---
+        function renderMarkers() {
+            // Hapus semua marker yang ada di peta
+            Object.values(markers).forEach(m => map.removeLayer(m));
+            
+            let sisa = 0;
+
+            maduraData.forEach(lokasi => {
+                // Tentukan kelas CSS berdasarkan status isAnswered
+                const markerClass = lokasi.isAnswered ? "custom-marker marker-disabled" : "custom-marker";
+                const iconClass = lokasi.isAnswered ? "fa-check" : "fa-map-pin"; // Ubah ikon jika sudah dijawab
+
+                const customIcon = L.divIcon({
+                    className: 'custom-icon-container',
+                    html: `<div class="${markerClass} w-8 h-8 text-sm"><i class="fas ${iconClass}"></i></div>`,
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 32]
+                });
+
+                const marker = L.marker([lokasi.lat, lokasi.lng], { icon: customIcon })
+                    .bindTooltip(lokasi.name, { direction: 'top', offset: [0, -32], className: 'font-bold bg-white/90 rounded text-xs' })
+                    .addTo(map);
+                
+                markers[lokasi.id] = marker;
+
+                // Cek jika marker belum dijawab, tambahkan event klik
+                if (!lokasi.isAnswered) {
+                    sisa++;
+                    marker.on('click', () => handleMarkerClick(lokasi));
+                } else {
+                    // Jika sudah dijawab, beri alert kecil
+                    marker.on('click', () => {
+                        alert("Soal di daerah ini sudah dijawab oleh siswa lain. Silakan pilih lokasi yang masih berwarna merah!");
+                    });
+                }
+            });
+
+            // Update badge sisa soal
+            document.getElementById('soal-sisa-badge').innerText = sisa;
+
+            // Tampilkan pop-up selamat jika semua soal sudah habis (sisa = 0)
+            if (sisa === 0 && maduraData.length > 0) {
+                document.getElementById('completion-modal').classList.remove('hidden');
+            }
+        }
+
+        renderMarkers();
+
+        // --- LOGIKA TAMPILKAN SOAL ---
+        function handleMarkerClick(lokasi) {
+            currentActiveId = lokasi.id;
+            
+            document.getElementById('modal-location').innerText = lokasi.name;
+            document.getElementById('modal-question-text').innerText = lokasi.question;
+
+            // Pastikan event handler tombol selesai diupdate
+            document.getElementById('btn-tandai-selesai').onclick = function() {
+                markAsDone(lokasi.id);
+            };
+
+            document.getElementById('question-modal').classList.remove('hidden');
+            map.flyTo([lokasi.lat, lokasi.lng], 11, { duration: 1.0 });
+        }
+
+        // --- FUNGSI TANDAI SELESAI ---
+        function markAsDone(id) {
+            // Cari data lokasi dan ubah statusnya
+            const index = maduraData.findIndex(d => d.id === id);
+            if (index !== -1) {
+                maduraData[index].isAnswered = true;
+            }
+            
+            closeModal('question-modal');
+            renderMarkers(); // Render ulang peta (ubah warna pin)
+        }
+
+        // --- FUNGSI RESET SEMUA (UNTUK GURU) ---
+        function resetAllQuestions() {
+            const confirmReset = confirm("Apakah Anda yakin ingin mengulang semua soal dari awal? Semua titik akan menjadi merah kembali.");
+            if (confirmReset) {
+                maduraData.forEach(lokasi => {
+                    lokasi.isAnswered = false;
+                });
+                renderMarkers();
+                closeModal('completion-modal'); // Tutup pop-up selesai jika sedang terbuka
+                closeModal('settings-modal');   // Tutup menu pengaturan jika sedang terbuka
+            }
+        }
+
+        // --- LOGIKA PENGATURAN (EDIT SOAL) ---
+        function openSettings() {
+            const container = document.getElementById('settings-form-container');
+            container.innerHTML = ''; 
+
+            maduraData.forEach((lokasi, i) => {
+                const section = document.createElement('div');
+                section.className = "mb-4 p-4 border border-gray-200 rounded-lg bg-white shadow-sm flex flex-col md:flex-row gap-4";
+                
+                section.innerHTML = `
+                    <div class="md:w-1/4 flex flex-col justify-center">
+                        <h3 class="font-bold text-gray-800"><i class="fas fa-map-marker-alt text-red-500 mr-1"></i> ${lokasi.name}</h3>
+                        <span class="text-xs ${lokasi.isAnswered ? 'text-gray-400' : 'text-green-600 font-bold'}">Status: ${lokasi.isAnswered ? 'Sudah Dijawab' : 'Belum Dijawab'}</span>
+                    </div>
+                    <div class="md:w-3/4">
+                        <textarea id="edit-q-${i}" class="w-full border border-gray-300 rounded p-2 focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none text-sm" rows="3">${lokasi.question}</textarea>
+                    </div>
+                `;
+                container.appendChild(section);
+            });
+
+            document.getElementById('settings-modal').classList.remove('hidden');
+        }
+
+        function saveSettings() {
+            maduraData.forEach((lokasi, i) => {
+                lokasi.question = document.getElementById(`edit-q-${i}`).value;
+            });
+
+            closeModal('settings-modal');
+            alert("Perubahan soal berhasil disimpan!");
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+    </script>
+</body>
+</html>
