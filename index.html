@@ -38,7 +38,7 @@
         }
         .marker-disabled:hover { transform: scale(0.9) rotate(-45deg); cursor: not-allowed; }
 
-        /* --- EFEK PULSING UNTUK START & FINISH --- */
+        /* --- EFEK PULSING --- */
         .pulse-ring {
             content: ''; border-radius: 50%; height: 50px; width: 50px;
             position: absolute; left: -9px; top: -9px;
@@ -75,41 +75,29 @@
 
         .animated-route-path { animation: dashMove 1.5s linear infinite; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3)); }
         @keyframes dashMove { 0% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -24; } }
-
-        /* Layar Loading Cloud */
-        #loading-screen {
-            position: fixed; inset: 0; background-color: rgba(255, 255, 255, 0.95); z-index: 999999;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
     </style>
 </head>
 <body class="flex flex-col h-screen">
 
-    <!-- LAYAR LOADING SERVER CLOUD -->
-    <div id="loading-screen">
-        <i class="fas fa-satellite-dish text-6xl text-blue-600 animate-pulse mb-6"></i>
-        <h2 class="text-2xl md:text-3xl font-black text-gray-800 mb-2">Menghubungkan ke Server...</h2>
-        <p class="text-gray-600 font-bold text-center px-4">Memuat soal terbaru Anda & Mengacak urutannya secara otomatis.</p>
-    </div>
-
     <!-- Header -->
-    <header class="bg-gradient-to-r from-red-800 to-red-600 text-white p-3 shadow-lg z-10 flex flex-col md:flex-row md:justify-between items-center gap-2 border-b-4 border-yellow-400">
+    <header class="bg-gradient-to-r from-red-800 to-red-600 text-white p-3 shadow-lg z-10 flex flex-col md:flex-row md:justify-between items-center gap-3 border-b-4 border-yellow-400">
         <div class="flex items-center gap-3 w-full md:w-auto justify-center md:justify-start">
-            <div class="bg-white text-red-700 p-2 rounded-full shadow-inner relative">
+            <div class="bg-white text-red-700 p-2 rounded-full shadow-inner relative shrink-0">
                 <i class="fas fa-compass text-2xl md:text-3xl animate-spin-slow" style="animation: spin 10s linear infinite;"></i>
-                <div class="absolute -top-1 -right-1 bg-green-500 w-3 h-3 rounded-full border-2 border-white animate-ping"></div>
             </div>
             <div class="text-center md:text-left">
-                <h1 class="text-xl md:text-2xl font-black tracking-widest uppercase" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">Ekspedisi Madura</h1>
-                <p class="text-[10px] md:text-xs text-yellow-200 font-bold"><i class="fas fa-random"></i> Fitur Acak Soal Aktif! Anti Contek Kelompok.</p>
+                <h1 class="text-xl md:text-2xl font-black tracking-widest uppercase" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">Mayuh Ngalelengih Madureh (Ayo Menjelajah Madura)</h1>
             </div>
         </div>
-        <div class="flex items-center gap-2 w-full md:w-auto justify-center">
+        <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-center">
+            <button onclick="showProgress()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-bold shadow-md transition flex items-center gap-2 border border-blue-400">
+                <i class="fas fa-chart-line"></i> <span>Lihat Progress</span>
+            </button>
             <button onclick="resetOnlyProgress()" class="bg-yellow-400 hover:bg-yellow-500 text-red-900 px-3 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-bold shadow-md transition flex items-center gap-2 border border-yellow-300">
-                <i class="fas fa-sync-alt"></i> <span>Mulai Ulang Kelas</span>
+                <i class="fas fa-sync-alt"></i> <span>Mulai Ulang</span>
             </button>
             <button onclick="openSettings()" class="bg-white hover:bg-gray-100 text-red-800 px-3 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-bold shadow-md transition flex items-center gap-2">
-                <i class="fas fa-cogs"></i> <span>Edit Soal Guru</span>
+                <i class="fas fa-cogs"></i> <span>Edit Soal</span>
             </button>
         </div>
     </header>
@@ -130,7 +118,7 @@
     <div id="question-modal" class="hidden absolute inset-0 bg-gray-900/80 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden modal-enter relative border-t-8 border-red-600 max-h-[90vh] flex flex-col">
             <div class="p-4 md:p-6 relative overflow-y-auto custom-scroll">
-                <button onclick="closeModal('question-modal')" id="btn-close-modal" class="absolute top-2 md:top-4 right-3 md:right-4 text-gray-400 hover:text-gray-800 text-3xl leading-none transition transform hover:rotate-90">&times;</button>
+                <button onclick="closeModal('question-modal')" class="absolute top-2 md:top-4 right-3 md:right-4 text-gray-400 hover:text-gray-800 text-3xl leading-none transition transform hover:rotate-90">&times;</button>
                 
                 <div class="flex items-center gap-3 mb-4 border-b-2 border-gray-100 pb-3 md:pb-4 mt-2 md:mt-0">
                     <div class="bg-red-100 p-2 md:p-3 rounded-full text-red-600 text-xl md:text-2xl shadow-inner">
@@ -157,10 +145,40 @@
                     <button id="btn-tandai-selesai" class="w-full py-3 md:py-4 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl font-black transition shadow-lg text-sm md:text-lg transform hover:-translate-y-1">
                         <i class="fas fa-check-circle mr-2"></i> KELOMPOK KAMI SELESAI!
                     </button>
-                    <button onclick="closeModal('question-modal')" id="btn-tutup-sementara" class="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl font-bold transition text-sm">
+                    <button onclick="closeModal('question-modal')" class="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl font-bold transition text-sm">
                         Tutup Sementara
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ucapan Selamat Selesai 1 Soal -->
+    <div id="congrats-modal" class="hidden absolute inset-0 bg-gray-900/80 z-[10000] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 text-center modal-enter relative overflow-hidden border-4 border-green-500">
+            <div class="bg-green-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+                <i class="fas fa-star text-5xl text-green-500 animate-pulse"></i>
+            </div>
+            <h2 class="text-2xl font-black text-gray-800 mb-2 uppercase tracking-wide">Kerja Bagus!</h2>
+            <p class="text-gray-600 mb-6 font-medium">Tantangan berhasil diselesaikan oleh kelompok Anda. Terus semangat menuju tantangan berikutnya!</p>
+            <button onclick="closeModal('congrats-modal')" class="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-black transition shadow-lg text-lg transform hover:-translate-y-1">
+                LANJUT EKSPEDISI <i class="fas fa-arrow-right ml-1"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal Progress -->
+    <div id="progress-modal" class="hidden absolute inset-0 bg-gray-900/80 z-[10000] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden modal-enter flex flex-col max-h-[85vh]">
+            <div class="bg-blue-600 p-4 text-white flex justify-between items-center shrink-0">
+                <h2 class="text-lg font-bold"><i class="fas fa-chart-line mr-2"></i> Progress Ekspedisi</h2>
+                <button onclick="closeModal('progress-modal')" class="text-white hover:text-blue-200 text-3xl leading-none">&times;</button>
+            </div>
+            <div class="p-5 overflow-y-auto custom-scroll flex-grow" id="progress-list-container">
+                <!-- Progress bars will be injected here -->
+            </div>
+            <div class="p-4 bg-gray-50 border-t shrink-0">
+                <button onclick="closeModal('progress-modal')" class="w-full py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-bold transition">Tutup</button>
             </div>
         </div>
     </div>
@@ -174,7 +192,7 @@
             </div>
             
             <div class="p-3 md:p-4 bg-blue-50 border-b border-blue-200 shrink-0">
-                <p class="text-blue-800 text-sm font-bold"><i class="fas fa-server mr-1 text-blue-600"></i> Server Tersambung: Soal ini akan disimpan abadi di Server Internet. Saat muncul ke siswa, urutannya akan <strong>diacak secara otomatis</strong>.</p>
+                <p class="text-blue-800 text-sm font-bold"><i class="fas fa-save mr-1 text-blue-600"></i> Mode Local Storage: Anda dapat <b>menambah</b> atau <b>menghapus</b> soal secara bebas. Semua perubahan akan tersimpan otomatis di perangkat ini meskipun di-refresh.</p>
             </div>
 
             <div class="p-2 md:p-4 overflow-y-auto custom-scroll flex-grow bg-gray-100" id="settings-form-container">
@@ -182,15 +200,18 @@
             </div>
 
             <div class="p-3 md:p-4 bg-white border-t flex flex-col-reverse md:flex-row justify-end shrink-0 gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                <button onclick="resetToFactory()" class="px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold transition text-sm w-full md:w-auto flex items-center justify-center gap-2">
+                    <i class="fas fa-trash-restore"></i> KEMBALIKAN KE SOAL ASLI
+                </button>
                 <button onclick="closeModal('settings-modal')" class="px-4 py-3 text-gray-600 hover:bg-gray-200 rounded-lg font-bold transition text-sm w-full md:w-auto">Batal / Tutup</button>
-                <button onclick="saveSettingsToServer()" id="btn-save-settings" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-black shadow-lg transition text-sm w-full md:w-auto flex items-center justify-center gap-2">
-                    <i class="fas fa-cloud-upload-alt"></i> SIMPAN PERMANEN KE SERVER
+                <button onclick="saveSettings()" id="btn-save-settings" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-black shadow-lg transition text-sm w-full md:w-auto flex items-center justify-center gap-2">
+                    <i class="fas fa-save"></i> SIMPAN PERUBAHAN
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Modal Penutup (Finish) -->
+    <!-- Modal Penutup (Finish Total) -->
     <div id="completion-modal" class="hidden absolute inset-0 bg-gray-900/90 z-[10000] flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-3xl shadow-[0_0_50px_rgba(251,191,36,0.6)] max-w-md w-full p-8 text-center modal-enter border-4 border-yellow-400 relative overflow-hidden">
             <div class="absolute inset-0 pointer-events-none opacity-20" style="background-image: url('data:image/svg+xml,%3Csvg width=\\'40\\' height=\\'40\\' viewBox=\\'0 0 40 40\\' xmlns=\\'http://www.w3.org/2000/svg\\'%3E%3Cg fill=\\'%23facc15\\' fill-opacity=\\'1\\' fill-rule=\\'evenodd\\'%3E%3Cpath d=\\'M0 40L40 0H20L0 20M40 40V20L20 40\\'/%3E%3C/g%3E%3C/svg%3E');"></div>
@@ -211,57 +232,42 @@
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
-    <!-- SCRIPT MODULE UNTUK MENGHUBUNGKAN KE SERVER DATABASE CLOUD -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        let firebaseConfig = {};
-        try { if (typeof __firebase_config !== 'undefined') { firebaseConfig = JSON.parse(__firebase_config); } } catch (e) {}
-        
-        // Ganti ID agar data lama tidak mengganggu rute 4 Kabupaten ini
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'madura-app-4kabupaten-v1';
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
+    <script>
         // ====================================================================
-        // DATA BAWAAN: 4 KABUPATEN MADURA (Bangkalan, Sampang, Pamekasan, Sumenep)
+        // DATA BAWAAN LAMA (4 KABUPATEN MADURA) DENGAN LINK RELATIVE ASSETS
+        // Anda bisa menambah/menghapus soal di array ini secara hardcode juga.
         // ====================================================================
         const defaultMaduraData = [
             { id: "bangkalan", name: "Pos 1: Bangkalan", lat: -7.0333, lng: 112.7333, questions: [
-                { isAnswered: false, imageData: "", text: "Di Bangkalan, masyarakat sangat menghormati Ulama. Bagaimana adab yang baik saat lewat di depan orang yang lebih tua?" },
-                { isAnswered: false, imageData: "", text: "Saat berkunjung ke Museum Cakraningrat Bangkalan, aturan kesopanan apa yang harus dipatuhi?" },
-                { isAnswered: false, imageData: "", text: "Mengapa memakai peci sangat identik dengan ketaatan budaya bagi pria di Bangkalan?" },
-                { isAnswered: false, imageData: "", text: "Jelaskan pentingnya tutur kata yang sopan saat bertanya jalan di sekitar alun-alun Bangkalan!" }
+                { isAnswered: false, imageData: "assets/bangkalan-1.webp", text: "Di Bangkalan, masyarakat sangat menghormati Ulama. Bagaimana adab yang baik saat lewat di depan orang yang lebih tua?" },
+                { isAnswered: false, imageData: "assets/bangkalan-2.webp", text: "Saat berkunjung ke Museum Cakraningrat Bangkalan, aturan kesopanan apa yang harus dipatuhi?" },
+                { isAnswered: false, imageData: "assets/bangkalan-3.webp", text: "Mengapa memakai peci sangat identik dengan ketaatan budaya bagi pria di Bangkalan?" },
+                { isAnswered: false, imageData: "assets/bangkalan-4.webp", text: "Jelaskan pentingnya tutur kata yang sopan saat bertanya jalan di sekitar alun-alun Bangkalan!" }
             ]},
             { id: "sampang", name: "Pos 2: Sampang", lat: -7.1887, lng: 113.2458, questions: [
-                { isAnswered: false, imageData: "", text: "Sampang terkenal dengan wisata pantainya. Bagaimana cara menegur pengunjung yang membuang sampah sembarangan dengan sopan?" },
-                { isAnswered: false, imageData: "", text: "Jika ada tetangga yang mengadakan syukuran di Sampang, bagaimana adab bertamu yang benar?" },
-                { isAnswered: false, imageData: "", text: "Masyarakat Sampang memiliki ikatan keluarga yang kuat. Mengapa mencium tangan orang tua sebelum bepergian itu penting?" },
-                { isAnswered: false, imageData: "", text: "Berikan contoh sikap rukun dan sopan santun saat terjadi beda pendapat di balai desa!" }
+                { isAnswered: false, imageData: "assets/sampang-1.webp", text: "Sampang terkenal dengan wisata pantainya. Bagaimana cara menegur pengunjung yang membuang sampah sembarangan dengan sopan?" },
+                { isAnswered: false, imageData: "assets/sampang-2.webp", text: "Jika ada tetangga yang mengadakan syukuran di Sampang, bagaimana adab bertamu yang benar?" },
+                { isAnswered: false, imageData: "assets/sampang-3.webp", text: "Masyarakat Sampang memiliki ikatan keluarga yang kuat. Mengapa mencium tangan orang tua sebelum bepergian itu penting?" },
+                { isAnswered: false, imageData: "assets/sampang-4.webp", text: "Berikan contoh sikap rukun dan sopan santun saat terjadi beda pendapat di balai desa!" }
             ]},
             { id: "pamekasan", name: "Pos 3: Pamekasan", lat: -7.1583, lng: 113.4816, questions: [
-                { isAnswered: false, imageData: "", text: "Pamekasan disebut Kota Gerbang Salam. Bagaimana seorang siswa mencerminkan identitas kota ini saat di sekolah?" },
-                { isAnswered: false, imageData: "", text: "Apa peran menggunakan pakaian yang rapi dan menutup aurat saat mengunjungi monumen Arek Lancor?" },
-                { isAnswered: false, imageData: "", text: "Jelaskan bagaimana tradisi membatik di Pamekasan melatih kesabaran dan kehalusan budi pekerti!" },
-                { isAnswered: false, imageData: "", text: "Bagaimana cara menegur teman yang berbicara kasar saat bermain di sekitar monumen kota?" }
+                { isAnswered: false, imageData: "assets/pamekasan-1.webp", text: "Pamekasan disebut Kota Gerbang Salam. Bagaimana seorang siswa mencerminkan identitas kota ini saat di sekolah?" },
+                { isAnswered: false, imageData: "assets/pamekasan-2.webp", text: "Apa peran menggunakan pakaian yang rapi dan menutup aurat saat mengunjungi monumen Arek Lancor?" },
+                { isAnswered: false, imageData: "assets/pamekasan-3.webp", text: "Jelaskan bagaimana tradisi membatik di Pamekasan melatih kesabaran dan kehalusan budi pekerti!" },
+                { isAnswered: false, imageData: "assets/pamekasan-4.webp", text: "Bagaimana cara menegur teman yang berbicara kasar saat bermain di sekitar monumen kota?" }
             ]},
             { id: "sumenep", name: "Pos 4: Sumenep", lat: -7.0097, lng: 113.8617, questions: [
-                { isAnswered: false, imageData: "", text: "Sumenep kaya akan tata krama Keraton. Apakah sikap membungkukkan badan (Ojhung) saat lewat masih relevan saat ini?" },
-                { isAnswered: false, imageData: "", text: "Saat mengunjungi Masjid Jami' Sumenep, sebutkan 3 adab kesopanan yang wajib dijaga!" },
-                { isAnswered: false, imageData: "", text: "Bagaimana cara menghargai peninggalan leluhur saat berkunjung ke Asta Tinggi?" },
-                { isAnswered: false, imageData: "", text: "Keraton Sumenep memiliki pendopo tempat musyawarah. Sebutkan adab yang baik saat menyampaikan pendapat!" }
+                { isAnswered: false, imageData: "assets/sumenep-1.webp", text: "Sumenep kaya akan tata krama Keraton. Apakah sikap membungkukkan badan (Ojhung) saat lewat masih relevan saat ini?" },
+                { isAnswered: false, imageData: "assets/sumenep-2.webp", text: "Saat mengunjungi Masjid Jami' Sumenep, sebutkan 3 adab kesopanan yang wajib dijaga!" },
+                { isAnswered: false, imageData: "assets/sumenep-3.webp", text: "Bagaimana cara menghargai peninggalan leluhur saat berkunjung ke Asta Tinggi?" },
+                { isAnswered: false, imageData: "assets/sumenep-4.webp", text: "Keraton Sumenep memiliki pendopo tempat musyawarah. Sebutkan adab yang baik saat menyampaikan pendapat!" }
             ]}
         ];
 
-        let currentUser = null;
         window.maduraData = []; 
         window.tempImageUploads = {}; 
         
-        // Rute Start & Finish disesuaikan
+        // Rute Start & Finish
         const startPoint = { lat: -7.15, lng: 112.65, name: "TITIK AWAL (Suramadu)" }; 
         const finishPoint = { lat: -7.05, lng: 113.95, name: "GARIS FINISH (Ujung Sumenep)" }; 
         
@@ -269,13 +275,13 @@
         let fgRoutePolyline = null; 
         const markers = {};
         
-        // Center peta di tengah Pulau Madura
+        // Setup Map
         const map = L.map('map', { zoomControl: false }).setView([-7.08, 113.30], 10); 
         L.control.zoom({ position: 'bottomright' }).addTo(map);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 15, minZoom: 9 }).addTo(map);
 
         // ====================================================================
-        // FUNGSI UNTUK MENGACAK URUTAN SOAL (FISHER-YATES SHUFFLE)
+        // FUNGSI ACAK SOAL
         // ====================================================================
         window.shuffleArray = function(array) {
             let currentIndex = array.length, randomIndex;
@@ -288,72 +294,50 @@
         }
 
         // ====================================================================
-        // SISTEM KONEKSI SERVER (LOAD DATA & ACAK OTOMATIS)
+        // INISIALISASI APLIKASI (LOCAL STORAGE MEMILIKI OTORITAS PENUH)
         // ====================================================================
-        const initAuth = async () => {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                document.getElementById('loading-screen').innerHTML = "<h2 class='text-red-500 font-bold text-2xl'>Gagal Terhubung ke Server. Muat Ulang Halaman.</h2>";
-            }
-        };
+        function initApp() {
+            const savedDataStr = localStorage.getItem('maduraExpeditionData');
 
-        initAuth(); 
-
-        onAuthStateChanged(auth, (user) => {
-            currentUser = user;
-            if (!user) return;
-
-            const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'maduraPetaAcakMaster_MaduraFull');
-            
-            onSnapshot(colRef, (snapshot) => {
-                if (snapshot.empty) {
-                    initializeDefaultDataOnServer();
-                } else {
-                    let loadedData = [];
-                    snapshot.forEach(doc => { 
-                        let dataArea = doc.data();
-                        
-                        // 1. PAKSA SEMUA SOAL MENJADI BELUM DIJAWAB (RESET KELOMPOK)
-                        dataArea.questions.forEach(q => {
-                            q.isAnswered = false; 
-                        });
-
-                        // 2. ACAK URUTAN SOAL DI DAERAH INI!
-                        dataArea.questions = window.shuffleArray(dataArea.questions);
-                        
-                        loadedData.push(dataArea); 
+            if (savedDataStr) {
+                try {
+                    window.maduraData = JSON.parse(savedDataStr);
+                    // Cek jika ada lokasi baru di default yang belum ada di local storage
+                    defaultMaduraData.forEach(defLoc => {
+                        if (!window.maduraData.find(savedLoc => savedLoc.id === defLoc.id)) {
+                            window.maduraData.push(JSON.parse(JSON.stringify(defLoc)));
+                        }
                     });
-                    
-                    // Susun urutan daerah agar garis rute benar
-                    const order = ["bangkalan", "sampang", "pamekasan", "sumenep"];
-                    loadedData.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
-                    
-                    window.maduraData = loadedData;
-                    
-                    document.getElementById('loading-screen').style.display = 'none';
-                    window.renderMarkers();
+                } catch (e) {
+                    console.error("Gagal sinkronisasi data lokal. Menggunakan data default.", e);
+                    window.maduraData = JSON.parse(JSON.stringify(defaultMaduraData));
                 }
-            }, (error) => {});
-        });
+            } else {
+                window.maduraData = JSON.parse(JSON.stringify(defaultMaduraData));
+            }
 
-        async function initializeDefaultDataOnServer() {
+            // Acak soal secara otomatis setiap kali aplikasi dibuka/refresh
+            window.maduraData.forEach(lokasi => {
+                lokasi.questions = window.shuffleArray(lokasi.questions);
+            });
+
+            // Simpan sinkronisasi terbaru ke Local Storage
             try {
-                for (const region of defaultMaduraData) {
-                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'maduraPetaAcakMaster_MaduraFull', region.id);
-                    await setDoc(docRef, region);
-                }
-            } catch (error) {}
+                localStorage.setItem('maduraExpeditionData', JSON.stringify(window.maduraData));
+            } catch (e) {
+                console.warn("Storage penuh saat memuat awal", e);
+            }
+
+            renderMarkers();
         }
+
+        // Jalankan saat pertama kali dibuka
+        initApp();
 
         // ====================================================================
         // RENDER PETA
         // ====================================================================
-        window.renderMarkers = function() {
+        function renderMarkers() {
             Object.values(markers).forEach(m => map.removeLayer(m));
             if (bgRoutePolyline) map.removeLayer(bgRoutePolyline);
             if (fgRoutePolyline) map.removeLayer(fgRoutePolyline);
@@ -377,7 +361,7 @@
                 const soalTersisa = lokasi.questions.filter(q => !q.isAnswered).length;
                 totalSisa += soalTersisa;
 
-                const isHabis = soalTersisa === 0;
+                const isHabis = (soalTersisa === 0 && lokasi.questions.length > 0);
                 const markerClass = isHabis ? "custom-marker marker-disabled" : "custom-marker";
                 const iconClass = isHabis ? "fa-flag-checkered" : "fa-map-pin";
                 const badgeHTML = (!isHabis && soalTersisa > 0) ? `<div class="badge-sisa">${soalTersisa}</div>` : '';
@@ -394,8 +378,10 @@
                 
                 markers[lokasi.id] = marker;
 
-                if (!isHabis) {
+                if (!isHabis && lokasi.questions.length > 0) {
                     marker.on('click', () => { window.handleMarkerClick(lokasi); });
+                } else if (lokasi.questions.length === 0) {
+                     marker.on('click', () => alert(`Tidak ada misi di ${lokasi.name}.`));
                 } else {
                     marker.on('click', () => alert(`Luar Biasa! Semua misi di ${lokasi.name} sudah ditaklukkan.`));
                 }
@@ -416,7 +402,11 @@
 
             document.getElementById('total-sisa-badge').innerText = totalSisa;
 
-            if (totalSisa === 0 && window.maduraData.length > 0) {
+            // Jika semua total misi sudah dikerjakan (dan ada misi)
+            let totalMisiGame = 0;
+            window.maduraData.forEach(l => totalMisiGame += l.questions.length);
+
+            if (totalSisa === 0 && totalMisiGame > 0) {
                 document.getElementById('completion-modal').classList.remove('hidden');
                 map.flyTo([finishPoint.lat, finishPoint.lng], 11, { duration: 2.0 });
             }
@@ -437,15 +427,15 @@
                 const imgContainer = document.getElementById('modal-image-container');
                 const imgElement = document.getElementById('modal-image');
                 if (activeQuestion.imageData && activeQuestion.imageData !== "") {
-                    imgElement.src = activeQuestion.imageData; imgContainer.classList.remove('hidden');
+                    imgElement.src = activeQuestion.imageData; 
+                    imgContainer.classList.remove('hidden');
                 } else {
-                    imgContainer.classList.add('hidden'); imgElement.src = "";
+                    imgContainer.classList.add('hidden'); 
+                    imgElement.src = "";
                 }
 
                 document.getElementById('btn-tandai-selesai').onclick = function() { window.markAsDone(lokasi.id, questionIndex); };
                 document.getElementById('question-modal').classList.remove('hidden');
-                
-                // Zoom sedikit mendekat ke pin
                 map.flyTo([lokasi.lat, lokasi.lng], 12, { duration: 1.0 });
             }
         };
@@ -456,18 +446,58 @@
         window.markAsDone = function(lokasiId, questionIndex) {
             const locIndex = window.maduraData.findIndex(d => d.id === lokasiId);
             if (locIndex !== -1) { 
-                // HANYA MENGUBAH DI MEMORI SEMENTARA SAAT APLIKASI MENYALA
                 window.maduraData[locIndex].questions[questionIndex].isAnswered = true; 
             }
+            
+            // Simpan progres ke Local Storage
+            try {
+                localStorage.setItem('maduraExpeditionData', JSON.stringify(window.maduraData));
+            } catch (e) {} // Abaikan jika gagal
+            
             window.closeModal('question-modal');
-            window.renderMarkers(); 
+            renderMarkers(); 
+
+            // Cek apakah game selesai total, jika tidak, tampilkan popup selamat kecil
+            let sisaMisiBerapa = 0;
+            window.maduraData.forEach(l => sisaMisiBerapa += l.questions.filter(q => !q.isAnswered).length);
+            
+            if (sisaMisiBerapa > 0) {
+                 document.getElementById('congrats-modal').classList.remove('hidden');
+            }
+        };
+
+        // ====================================================================
+        // TAMPILKAN LIHAT PROGRESS
+        // ====================================================================
+        window.showProgress = function() {
+            const container = document.getElementById('progress-list-container');
+            container.innerHTML = '';
+
+            window.maduraData.forEach(loc => {
+                const total = loc.questions.length;
+                const selesai = loc.questions.filter(q => q.isAnswered).length;
+                const percent = total === 0 ? 0 : Math.round((selesai / total) * 100);
+
+                container.innerHTML += `
+                    <div class="mb-5 bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                        <div class="flex justify-between text-sm font-black mb-2 text-gray-800">
+                            <span><i class="fas fa-map-pin text-red-500 mr-1"></i> ${loc.name}</span>
+                            <span class="text-blue-600 bg-blue-100 px-2 py-0.5 rounded">${selesai} / ${total} Selesai</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3">
+                            <div class="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-1000" style="width: ${percent}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('progress-modal').classList.remove('hidden');
         };
 
         // ====================================================================
         // TOMBOL MANUAL UNTUK MULAI KELAS BARU (RESET MERAH & ACAK ULANG)
         // ====================================================================
         window.resetOnlyProgress = function() {
-            const confirmReset = confirm("Mulai Kelas Baru?\n\nSemua pin akan KEMBALI MERAH dan SOAL AKAN DIACAK ULANG. Soal terbaru buatan Anda TETAP AMAN.");
+            const confirmReset = confirm("Mulai Kelas Baru?\n\nSemua pin akan KEMBALI MERAH dan SOAL AKAN DIACAK ULANG agar kelompok tidak bisa saling menyontek.");
             
             if (confirmReset) {
                 window.maduraData.forEach(lokasi => {
@@ -475,13 +505,30 @@
                     lokasi.questions = window.shuffleArray(lokasi.questions);
                 });
                 
+                // Simpan reset progres ke Local Storage
+                try {
+                    localStorage.setItem('maduraExpeditionData', JSON.stringify(window.maduraData));
+                } catch(e){}
+                
                 window.closeModal('completion-modal'); 
-                window.renderMarkers();
+                renderMarkers();
                 map.flyTo([-7.08, 113.30], 10, { duration: 1.5 });
             }
         };
 
-        // --- UPLOAD GAMBAR KOMPRESI ---
+        // ====================================================================
+        // TOMBOL KEMBALIKAN KE SOAL ASLI (BAWAAN)
+        // ====================================================================
+        window.resetToFactory = function() {
+            if (confirm("PERINGATAN!\n\nApakah Anda yakin ingin menghapus SEMUA soal yang telah diedit/ditambah dan mengembalikannya ke soal asli bawaan pabrik?")) {
+                localStorage.removeItem('maduraExpeditionData');
+                initApp(); // Inisialisasi ulang
+                alert("Soal berhasil dikembalikan ke bawaan awal.");
+                window.closeModal('settings-modal');
+            }
+        }
+
+        // --- UPLOAD GAMBAR KOMPRESI TINGGI ---
         window.handleImageUpload = function(event, locIndex, qIndex) {
             const file = event.target.files[0];
             const previewContainer = document.getElementById(`preview-img-${locIndex}-${qIndex}`);
@@ -490,16 +537,20 @@
                 reader.onload = function(e) {
                     const img = new Image();
                     img.onload = function() {
-                        const MAX_WIDTH = 800; const MAX_HEIGHT = 800;
+                        const MAX_WIDTH = 500; const MAX_HEIGHT = 500;
                         let width = img.width; let height = img.height;
                         if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
                         else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
 
                         const canvas = document.createElement('canvas');
                         canvas.width = width; canvas.height = height;
-                        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
+                        const ctx = canvas.getContext('2d'); 
+                        
+                        ctx.fillStyle = "#ffffff";
+                        ctx.fillRect(0, 0, width, height);
+                        ctx.drawImage(img, 0, 0, width, height);
 
-                        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.5);
                         window.tempImageUploads[`${locIndex}-${qIndex}`] = compressedBase64;
                         
                         previewContainer.innerHTML = `<img src="${compressedBase64}" class="h-24 object-contain rounded border border-gray-300 mt-2 bg-white">
@@ -519,6 +570,37 @@
         };
 
         // --- PENGATURAN GURU ---
+        // Fungsi sinkronisasi nilai ketikan saat tombol tambah/hapus di klik
+        window.syncSettingsToData = function() {
+            window.maduraData.forEach((lokasi, locIndex) => {
+                lokasi.questions.forEach((q, qIndex) => {
+                    const textarea = document.getElementById(`edit-q-${locIndex}-${qIndex}`);
+                    if(textarea) q.text = textarea.value;
+                    if (window.tempImageUploads[`${locIndex}-${qIndex}`] !== undefined) {
+                        q.imageData = window.tempImageUploads[`${locIndex}-${qIndex}`];
+                    }
+                });
+            });
+        };
+
+        window.tambahSoalBaru = function(locIndex) {
+            window.syncSettingsToData();
+            window.maduraData[locIndex].questions.push({
+                isAnswered: false,
+                imageData: "",
+                text: "Tulis misi baru di sini..."
+            });
+            window.openSettings(); // Refresh UI
+        };
+
+        window.hapusSoalGuru = function(locIndex, qIndex) {
+            if(confirm("Yakin ingin menghapus misi ini secara permanen?")) {
+                window.syncSettingsToData();
+                window.maduraData[locIndex].questions.splice(qIndex, 1);
+                window.openSettings(); // Refresh UI
+            }
+        };
+
         window.openSettings = function() {
             window.tempImageUploads = {}; 
             const container = document.getElementById('settings-form-container');
@@ -542,19 +624,21 @@
                     
                     let existingPreview = "";
                     if (q.imageData && q.imageData !== "") {
-                         existingPreview = `<img src="${q.imageData}" class="h-24 object-contain rounded border border-gray-300 mt-2 bg-white">
+                         existingPreview = `<img src="${q.imageData}" onerror="this.style.display='none'; this.insertAdjacentHTML('afterend', '<div class=\\'text-xs text-red-500 mt-2\\'>⚠️ File <b>${q.imageData}</b> tidak ditemukan di folder assets.</div>');" class="h-24 object-contain rounded border border-gray-300 mt-2 bg-white">
                                             <button type="button" onclick="hapusGambar(${locIndex}, ${qIndex})" class="text-xs text-red-500 mt-1 font-bold underline"><i class="fas fa-trash"></i> Hapus Foto</button>`;
                          window.tempImageUploads[`${locIndex}-${qIndex}`] = q.imageData;
                     }
 
                     qDiv.innerHTML = `
                         <div class="absolute -top-3 left-4 bg-blue-600 text-white text-[10px] md:text-xs font-bold px-2 py-1 rounded shadow">Isi Misi ${qIndex + 1}</div>
+                        <button type="button" onclick="hapusSoalGuru(${locIndex}, ${qIndex})" title="Hapus Misi" class="absolute -top-3 right-3 text-red-500 hover:text-red-700 bg-white border border-red-200 rounded-full w-7 h-7 flex items-center justify-center shadow-sm transition"><i class="fas fa-trash text-xs"></i></button>
+
                         <div class="mt-3 md:mt-2 mb-3">
                             <label class="block text-xs font-bold text-gray-500 mb-1">Teks Misi/Soal (Otomatis Diacak):</label>
                             <textarea id="edit-q-${locIndex}-${qIndex}" class="w-full border border-gray-300 rounded p-2 focus:border-blue-500 outline-none text-sm" rows="3">${q.text}</textarea>
                         </div>
                         <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                            <label class="block text-xs font-bold text-blue-800 mb-2"><i class="fas fa-camera mr-1"></i> Upload Foto dari Galeri (Opsional):</label>
+                            <label class="block text-xs font-bold text-blue-800 mb-2"><i class="fas fa-camera mr-1"></i> Upload Foto (Opsional):</label>
                             <input type="file" id="upload-img-${locIndex}-${qIndex}" accept="image/*" class="text-xs w-full mb-2">
                             <div id="preview-img-${locIndex}-${qIndex}">${existingPreview}</div>
                         </div>
@@ -566,51 +650,42 @@
                         if(fileInput) fileInput.addEventListener('change', (e) => window.handleImageUpload(e, locIndex, qIndex));
                     }, 0);
                 });
+
+                // Tombol Tambah Soal per Lokasi
+                const btnTambah = document.createElement('button');
+                btnTambah.className = "w-full mt-2 py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 border-2 border-blue-300 border-dashed rounded-xl font-black transition text-sm flex items-center justify-center gap-2";
+                btnTambah.innerHTML = '<i class="fas fa-plus-circle"></i> TAMBAH MISI BARU';
+                btnTambah.onclick = () => window.tambahSoalBaru(locIndex);
+                contentDiv.appendChild(btnTambah);
+
                 details.appendChild(contentDiv); container.appendChild(details);
             });
             document.getElementById('settings-modal').classList.remove('hidden');
         };
 
-        // MENGIRIM SOAL TERBARU KE SERVER
-        window.saveSettingsToServer = async function() {
-            if (!currentUser) { alert("Server belum terhubung. Coba muat ulang halaman."); return; }
-            
-            const btn = document.getElementById('btn-save-settings');
-            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Sedang Mengirim...`;
-            btn.disabled = true;
+        // MENYIMPAN SOAL (KE LOCAL STORAGE BROWSER)
+        window.saveSettings = function() {
+            window.syncSettingsToData(); // Ambil nilai text area terakhir
 
+            // Simpan perubahan ke Local Storage dengan penanganan Error jika Storage Penuh
             try {
-                window.maduraData.forEach((lokasi, locIndex) => {
-                    lokasi.questions.forEach((q, qIndex) => {
-                        q.text = document.getElementById(`edit-q-${locIndex}-${qIndex}`).value;
-                        if (window.tempImageUploads[`${locIndex}-${qIndex}`] !== undefined) {
-                            q.imageData = window.tempImageUploads[`${locIndex}-${qIndex}`];
-                        }
-                    });
-                });
-
-                for (const region of window.maduraData) {
-                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'maduraPetaAcakMaster_MaduraFull', region.id);
-                    await setDoc(docRef, region);
-                }
-
-                alert("✅ BERHASIL DISIMPAN!\nSoal terbaru Anda telah terkunci abadi di Server.");
+                localStorage.setItem('maduraExpeditionData', JSON.stringify(window.maduraData));
+                alert("✅ BERHASIL DISIMPAN!\nPerubahan soal telah tersimpan otomatis di perangkat/browser ini. Data Anda aman walau halaman direfresh.");
                 window.closeModal('settings-modal');
-                window.resetOnlyProgress();
-            } catch (error) {
-                console.error("Gagal simpan", error);
-                alert("❌ Gagal menyimpan. Mohon periksa koneksi internet Anda.");
-            } finally {
-                btn.innerHTML = `<i class="fas fa-cloud-upload-alt"></i> SIMPAN PERMANEN KE SERVER`;
-                btn.disabled = false;
+                renderMarkers(); // Render ulang peta (terutama angka badge sisa soal)
+            } catch (e) {
+                console.error("Storage Penuh", e);
+                alert("❌ GAGAL DISIMPAN KARENA MEMORI BROWSER PENUH!\n\nGambar yang Anda unggah terlalu banyak/besar untuk batas memori offline browser. Silakan hapus beberapa foto lalu coba simpan lagi.");
             }
         };
 
         window.closeModal = function(modalId) {
             document.getElementById(modalId).classList.add('hidden');
-            if(modalId === 'question-modal') { document.getElementById('modal-image-container').classList.add('hidden'); document.getElementById('modal-image').src = ""; }
+            if(modalId === 'question-modal') { 
+                document.getElementById('modal-image-container').classList.add('hidden'); 
+                document.getElementById('modal-image').src = ""; 
+            }
         };
     </script>
 </body>
 </html>
-
